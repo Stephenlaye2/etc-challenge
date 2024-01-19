@@ -63,6 +63,7 @@ product_transact_schema = StructType([
     StructField("city", StringType(), nullable=True),
     StructField("country", StringType(), nullable=True),
     StructField("total_cost", StringType(), nullable=True),
+    StructField("sku", StringType(), nullable=False),
     StructField("quanitity", StringType(), nullable=True),
     StructField("price", StringType(), nullable=True),
     StructField("total", StringType(), nullable=True)
