@@ -43,10 +43,23 @@ the dataset baches are consumed by their respective partitions. the partition ra
 |bin/kafka-console-consumer.sh --topic h-and-b --from-beginning --bootstrap-server localhost:9092|See message being consume on the console|
 
 
+## How It Works
+The kafka producer code in ``src/main/kafka_producer.py`` Initiate the data production into Kafka broker. Since this is local operation, the broker server is localhost.   
 
+In the ``src/main/insert_data.py``, there is ``FetchAndProduce`` class that handle the process of fetching data as soon as the data arrives HDFS. The block of code in the file check data arrival iteratively. This is done because dataset movement is 24 hrs.   
 
+The ``erasure`` dataset is checked first followed by ``product`` then ``transaction``, and finally ``customer`` dataset. Each of the dataset is being produced into a topic with different partition, and key. Below is the sample data via ``Kafka console consumer``.
+![alt kafka consumer output](resources/img/kafka_consumer_output.png "kafka_consumer_output.png")   
 
-• Data Cleanup : Constraint are applied to avoid such as null handling and column uniqueness, before writing data to a designated stora
-• Anonymisation : Pernsonal identification details are made hidden based on daily request 
-• Logs : Each data stream batch is logged onto the console as shown in the product batch below
+The ``src/main/data_processing.py`` file is made of Spark streaming code which read the data stream from Kafka and send it to hadoop hdfs. Below is the streaming data batch.
+
+![alt product batch](resources/img/product_batch.png "product_batch.png")   
+
+Below is what the hdfs file looks like.
+
+![alt hadoop file](resources/img/hadoop_transaction_file.png "transaction_data.png") 
+
+***Data Cleanup*** : Constraint are applied to avoid such as null handling and column uniqueness, before writing data to a designated stora
+***Anonymisation*** : Pernsonal identification details are made hidden based on daily request 
+***Logs*** : Each data stream batch is logged onto the console as shown in the product batch below
 
