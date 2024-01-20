@@ -8,6 +8,14 @@
 4. Python 3
 5. VSCode
 
+
+
+<hr>
+<strong>| HDFS | --> Python Script--> | KAFKA | -->Spark Streaming--> | HDFS | </strong>
+<hr>
+
+
+
 ### prerequisite
 To run the code successfully, you need to have hdfs setup on either linux server (possibly Ubuntu on Virtual Box). You need to have Kafka installed as well as pyspark setup. Also, ensure your machine has enough memory for the processes involved. If you're using Ubuntu on Virtual Box, try and increase the base memory to about 4gb, though depends on the size of your pc memory.
 
@@ -59,7 +67,10 @@ Below is what the hdfs file looks like.
 
 ![alt hadoop file](resources/img/hadoop_transaction_file.png "transaction_data.png") 
 
-***Data Cleanup*** : Constraint are applied to avoid such as null handling and column uniqueness, before writing data to a designated stora
-***Anonymisation*** : Pernsonal identification details are made hidden based on daily request 
-***Logs*** : Each data stream batch is logged onto the console as shown in the product batch below
+***Data Cleanup*** : Constraint are applied to avoid such as null handling and column uniqueness, before writing data to a designated storage.   
+
+***Anonymisation*** : Pernsonal identification details are made hidden based on daily request.   
+
+***Logs*** : Each data stream batch is logged onto the console as shown in the product batch above.   
+
 
