@@ -7,7 +7,6 @@ bootstrap_server = config.SERVER
 
 # kafkaProdycer @return - produce serialized value and key to  server topic
 
-
 def producer():
     return KafkaProducer(bootstrap_servers = [bootstrap_server],
                          value_serializer = lambda x: json.dumps(x).encode("utf-8"),

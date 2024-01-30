@@ -3,9 +3,9 @@ import findspark
 findspark.init
 from config import HDFS_PATH
 from pyspark.sql.window import Window
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import *
-from pyspark.sql.functions import col, from_json, regexp_replace, when, hash, explode, sum
+from pyspark.sql.functions import col, from_json, regexp_replace, when, hash, explode
 from data_schemas import *
 
 # Initializing simple spark session
@@ -22,12 +22,10 @@ address_schema = address_schema
 purchase_schema = purchase_schema
 pr_schema = pr_schema
 customer_schema = customer_schema
-product_transact_schema = product_transact_schema
-final_schema = final_schema
-
+    
 
 today_date = "2020-01-01"#str(today.date())
-today_hr = "00" #str(today.time())[:2]
+today_hr = "00" #getDateTime()[1]
 
 # Read from kafka stream
 def streamer(partition):
@@ -36,9 +34,10 @@ def streamer(partition):
     option("kafka.bootstrap.servers", "localhost:9092").\
     option("assign", "{\"h-and-b\":[%s]}" % partition).\
     option("startingOffsets", "latest").\
+    option("failOnDataLoss", "false").\
     load().withWatermark("timestamp", "10 minutes")
 
-    data_stream = data_stream.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)")
+    data_stream = data_stream.selectExpr("CAST(key AS STRING)", "CAST(timestamp AS STRING)", "CAST(value AS STRING)")
     return data_stream
 
 # Processing each dataset
@@ -46,25 +45,19 @@ def stream_from_kafka():
     
     # Write erasure data set first to hdfs - dataset comes once a day
     erasure_stream = (transformData(0, "erasure", erasure_schema))
-    erasure_stream.writeStream.format("json").\
-        option ("path", '{}/data-file/date={}/hour=00/erasure'.format(HDFS_PATH, today_date)).\
-        option("checkpointLocation", "{}/data-file/checkpoint/date={}/hour=00/erasure".format(HDFS_PATH, today_date)).\
+    erasure_stream.writeStream.foreachBatch(lambda batch_df, batch_id: batch_df.coalesce(1).write.mode("append").json("{}/data-file/date={}/hour={}/{}".format(HDFS_PATH, today_date, today_hr, "erasure"))).\
+        option("checkpointLocation", "{}/data-file/checkpoint/erasure".format(HDFS_PATH)).\
         start()
-  
-
+    
     # Product data comes at the start of the day - stream product data to hdfs. sku must be unique
     product_stream = transformData(1, "product", product_schema).\
     withColumn("popularity", col("popularity").cast("float")).withColumn("price", col("price").cast("double")).\
     where(col("popularity") > 0).where(col("price") >= 0).dropDuplicates(subset=["sku"])
 
-    product_stream.writeStream.format("json").\
-        option ("path", '{}/data-file/date={}/hour={}/product'.format(HDFS_PATH, today_date, today_hr)).\
-        option("checkpointLocation", "{}/data-file/checkpoint/date={}/hour={}/product".format(HDFS_PATH, today_date, today_hr)).\
+    product_stream.writeStream.foreachBatch(lambda batch_df, batch_id: batch_df.coalesce(1).write.mode("append").json("{}/data-file/date={}/hour={}/{}".format(HDFS_PATH, today_date, today_hr, "prodduct"))).\
+        option("checkpointLocation", "{}/data-file/checkpoint/product".format(HDFS_PATH)).\
         start()
     
-    pquery = product_stream.writeStream.format("console").option ("truncate", False).start()
-
-
     # transform transaction stream
     transaction_stream = transformData(3, "transaction", transaction_schema).\
     withColumn("delivery_address", from_json("delivery_address", address_schema)).\
@@ -76,14 +69,12 @@ def stream_from_kafka():
     withColumn("total_cost", col("total_cost").cast(DecimalType(30, 2))).\
     withColumn("total", col("total").cast(DecimalType(30, 2)))
      
-
     # Stream transaction and product data to hdfs
-    transaction_stream = transaction_stream.writeStream.format("json").\
-        option ("path", '{}/data-file/date={}/hour={}/transaction'.format(HDFS_PATH,today_date, today_hr)).\
-        option("checkpointLocation", "{}/data-file/checkpoint/date={}/hour={}/transaction".format(HDFS_PATH,today_date, today_hr)).\
+    transaction_stream.writeStream.\
+        foreachBatch(lambda batch_df, batch_id: batch_df.coalesce(1).write.mode("append").json("{}/data-file/date={}/hour={}/{}".format(HDFS_PATH, today_date, str(datetime.now().time())[:2], "transaction"))).\
+        option("checkpointLocation", "{}/data-file/checkpoint/transaction".format(HDFS_PATH)).\
         start()
     
-    # transtquery = transaction_stream.writeStream.format("console").option ("truncate", False).start()
    
     # Read the erasure dataset and get the customer id - this will be use to hash a user pid in the customer dataset
     erasure_df = sparkSn.read.option("inferSchema", True).format("json").load("{}/data-file/date={}/hour={}/erasure".format(HDFS_PATH, today_date, today_hr), schema=erasure_schema).\
@@ -95,15 +86,12 @@ def stream_from_kafka():
     withColumn("email", when(col("id") == customer_id, hash("email")).otherwise(col("email"))).\
     withColumn("phone_number", when(col("id") == customer_id, hash("phone_number")).otherwise(col("phone_number"))).na.drop(subset=["id"])
 
-    customer_stream = customer_stream.writeStream.format("json").\
-        option ("path", '{}/data-file/date={}/hour={}/customer'.format(HDFS_PATH,today_date, today_hr)).\
-        option("checkpointLocation", "{}/data-file/checkpoint/date={}/hour={}/customer".format(HDFS_PATH,today_date, today_hr)).\
+    customer_stream = customer_stream.writeStream.\
+        foreachBatch(lambda batch_df, batch_id: batch_df.coalesce(1).write.mode("append").json("{}/data-file/date={}/hour={}/{}".format(HDFS_PATH, today_date, str(datetime.now().time())[:2], "customer"))).\
+        option("checkpointLocation", "{}/data-file/checkpoint/customer".format(HDFS_PATH)).\
         start()
     
-    # customer_stream.printSchema()
-
     customer_stream.awaitTermination()
-    # return query
 
 
 def transformData(partition, data_key, schema):
@@ -112,12 +100,8 @@ def transformData(partition, data_key, schema):
     data_stream = data_stream.withColumn("temp", regexp_replace(col("temp"), '\\\\"', '"'))
     data_stream = data_stream.withColumn("temp", from_json(col("temp"), schema)).select(col("key"), col("temp.*"))
 
-    # data_stream.writeStream.format("console").option ("truncate", False).start()
-
     return data_stream
-
 
     
 stream_from_kafka()
-print("Stream transaction data")
 

@@ -7,9 +7,9 @@ erasure_schema = StructType([
 
 product_schema = StructType([
     StructField("sku", StringType(), nullable=False),
-    StructField("name", StringType(), nullable=False),
+    StructField("name", StringType(), nullable=True),
     StructField("price", StringType(), nullable=False),
-    StructField("category", StringType(), nullable=False),
+    StructField("category", StringType(), nullable=True),
     StructField("popularity", StringType(), nullable=False),
 ])
 
@@ -22,20 +22,20 @@ transaction_schema = StructType([
 ])
 
 address_schema = StructType([
-        StructField("address", StringType(), nullable=False),
+        StructField("address", StringType(), nullable=True),
         StructField("postcode", StringType(), nullable=True),
         StructField("city", StringType(), nullable=True),
         StructField("country", StringType(), nullable=True)
         ])
 purchase_schema = StructType([
         StructField("products", ArrayType(StringType()), nullable=False),
-        StructField("total_cost", StringType(), nullable=True)
+        StructField("total_cost", StringType(), nullable=False)
 ])
 pr_schema = StructType([
             StructField("sku", StringType(), nullable=False),
             StructField("quanitity", StringType(), nullable=True),
-            StructField("price", StringType(), nullable=True),
-            StructField("total", StringType(), nullable=True)
+            StructField("price", StringType(), nullable=False),
+            StructField("total", StringType(), nullable=False)
         ])
 
 customer_schema = StructType([
@@ -56,17 +56,15 @@ product_transact_schema = StructType([
     StructField("transaction_id", StringType(), nullable=False),
     StructField("transaction_time", StringType(), nullable=False),
     StructField("customer_id", StringType(), nullable=False),
-    StructField("delivery_address", StringType(), nullable=True),
-    StructField("purchases", StringType(), nullable=False),
-    StructField("address", StringType(), nullable=False),
+    StructField("address", StringType(), nullable=True),
     StructField("postcode", StringType(), nullable=True),
     StructField("city", StringType(), nullable=True),
     StructField("country", StringType(), nullable=True),
-    StructField("total_cost", StringType(), nullable=True),
+    StructField("total_cost", StringType(), nullable=False),
     StructField("sku", StringType(), nullable=False),
     StructField("quanitity", StringType(), nullable=True),
-    StructField("price", StringType(), nullable=True),
-    StructField("total", StringType(), nullable=True)
+    StructField("price", StringType(), nullable=False),
+    StructField("total", StringType(), nullable=False)
 ])
 
 final_schema = StructType([
