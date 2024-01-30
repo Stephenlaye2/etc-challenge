@@ -37,8 +37,8 @@ You can interact with hadoop UI through localhost:50070. The UI should look like
 
 You can check hadoop path using ```hadoop fs -ls /``` command
 
-Once hadoop is setup, you need to create a topic. This project uses one topic but the topic has for partition.
-the dataset baches are consumed by their respective partitions. the partition range from 0 to 3.
+Once hadoop is setup, you need to create a topic. This project uses one topic but the topic has four partitions.
+the dataset batches are consumed by their respective partitions. the partition range from 0 to 3.
 
 **Kafka commands**
 
@@ -67,7 +67,7 @@ Below is what the hdfs file looks like.
 
 ![alt hadoop file](resources/img/hadoop_transaction_file.png "transaction_data.png") 
 
-***Data Cleanup*** : Constraint are applied to avoid such as null handling and column uniqueness, before writing data to a designated storage.   
+***Data Cleanup*** : Constraint are applied to ensure column uniqueness before writing data to a designated storage.   
 
 ***Anonymisation*** : Pernsonal identification details are made hidden based on daily request.   
 
