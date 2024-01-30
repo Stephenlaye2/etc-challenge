@@ -15,7 +15,7 @@
 <hr>
 
  **Pipeline Design**   
- ![pipeline design](resources/img/hdfs_kafka_spark(1).png "hdfs_kafka_spark(1).png")
+ ![pipeline design](resources/img/hdfs_kafka_spark_streaming.png "hdfs_kafka_spark_streaming.png")
 
 ### prerequisite
 To run the code successfully, you need to have hdfs setup on either linux server (possibly Ubuntu on Virtual Box). You need to have Kafka installed as well as pyspark setup. Also, ensure your machine has enough memory for the processes involved. If you're using Ubuntu on Virtual Box, try and increase the base memory to about 4gb, though depends on the size of your pc memory.
